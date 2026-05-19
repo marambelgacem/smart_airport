@@ -1,5 +1,7 @@
 package airport.model.personnel;
 
+import java.util.Objects;
+
 /**
  * CLASSE ABSTRAITE — Personne
  * Concept POO : Abstraction + Encapsulation + base de l'Héritage
@@ -32,6 +34,18 @@ public abstract class Personne {
     public String getPrenom() { return prenom; }
     public String getEmail()  { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Personne personne)) return false;
+        return Objects.equals(id, personne.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 
     @Override
     public String toString() {

@@ -17,16 +17,16 @@ public class GestionAeroport {
     private final String nomAeroport;
 
     // MAP  : accès rapide par clé unique
-    private Map<String, Vol>      vols      = new HashMap<>();
-    private Map<String, Passager> passagers = new HashMap<>();
+    private final Map<String, Vol>      vols      = new HashMap<>();
+    private final Map<String, Passager> passagers = new HashMap<>();
 
     // LIST : ordre conservé
-    private List<Avion>    flotte    = new ArrayList<>();
-    private List<Piste>    pistes    = new ArrayList<>();
-    private List<AgentSol> agentsSol = new ArrayList<>();
+    private final List<Avion>    flotte    = new ArrayList<>();
+    private final List<Piste>    pistes    = new ArrayList<>();
+    private final List<AgentSol> agentsSol = new ArrayList<>();
 
     // SET  : unicité garantie (pas de doublons)
-    private Set<Pilote> pilotes = new HashSet<>();
+    private final Set<Pilote> pilotes = new HashSet<>();
 
     public GestionAeroport(String nomAeroport) {
         this.nomAeroport = nomAeroport;
@@ -50,6 +50,9 @@ public class GestionAeroport {
     public void ajouterPassager(Passager p) { passagers.put(p.getId(), p); }
     public Passager trouverPassager(String id) { return passagers.get(id); }
 
+    // ── Agents au sol ─────────────────────────────────────────
+    public void ajouterAgentSol(AgentSol agent) { agentsSol.add(agent); }
+
     // ── Pistes ────────────────────────────────────────────────
     public void ajouterPiste(Piste p) { pistes.add(p); }
 
@@ -70,6 +73,11 @@ public class GestionAeroport {
 
         if (avion.isEnMaintenance())
             throw new AvionEnMaintenanceException(immatAvion);
+
+        if (!avion.peutEffectuerVol(distance))
+            throw new IllegalArgumentException(
+                "L'avion " + immatAvion + " n'a pas une autonomie suffisante pour " + distance + " km."
+            );
 
         Pilote pilote = trouverPilote(idPilote)
             .orElseThrow(() -> new RuntimeException("Pilote introuvable : " + idPilote));

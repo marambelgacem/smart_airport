@@ -1,56 +1,44 @@
 @echo off
-REM ============================================================
-REM  SmartAirport — Script de compilation et lancement (Windows)
-REM  Chemin JavaFX : C:\Users\Acer\Downloads\javafx-sdk-26.0.1\lib
-REM ============================================================
+setlocal
 
-SET JAVAFX=C:\Users\Acer\Downloads\javafx-sdk-26.0.1\lib
-SET SRC=src
-SET OUT=out
-SET MAIN=airport.ui.AirportApp
+set "SCRIPT_DIR=%~dp0"
+cd /d "%SCRIPT_DIR%"
 
-echo.
-echo  SmartAirport — Compilation en cours...
-echo  =========================================
+set "MAVEN_VERSION=3.9.15"
+set "MAVEN_DIR=%SCRIPT_DIR%.tools\apache-maven-%MAVEN_VERSION%"
+set "MAVEN_BIN=%MAVEN_DIR%\bin\mvn.cmd"
+set "MAVEN_ZIP=%SCRIPT_DIR%.tools\apache-maven-%MAVEN_VERSION%-bin.zip"
+set "MAVEN_URL=https://archive.apache.org/dist/maven/maven-3/%MAVEN_VERSION%/binaries/apache-maven-%MAVEN_VERSION%-bin.zip"
 
-REM Creer le dossier de sortie
-if not exist %OUT% mkdir %OUT%
-
-REM Compiler tous les fichiers Java
-javac --module-path "%JAVAFX%" ^
-      --add-modules javafx.controls,javafx.fxml ^
-      -d %OUT% ^
-      %SRC%\airport\exception\VolCompletException.java ^
-      %SRC%\airport\exception\VolIndisponibleException.java ^
-      %SRC%\airport\exception\AvionEnMaintenanceException.java ^
-      %SRC%\airport\exception\PiloteNonQualifieException.java ^
-      %SRC%\airport\model\personnel\Personne.java ^
-      %SRC%\airport\model\personnel\Authentifiable.java ^
-      %SRC%\airport\model\personnel\Notifiable.java ^
-      %SRC%\airport\model\personnel\Pilote.java ^
-      %SRC%\airport\model\personnel\AgentSol.java ^
-      %SRC%\airport\model\personnel\Passager.java ^
-      %SRC%\airport\model\avion\Avion.java ^
-      %SRC%\airport\model\vol\StatutVol.java ^
-      %SRC%\airport\model\vol\Vol.java ^
-      %SRC%\airport\model\service\Piste.java ^
-      %SRC%\airport\collection\GestionAeroport.java ^
-      %SRC%\airport\ui\AirportApp.java
-
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo  ERREUR de compilation ! Verifiez les chemins.
-    pause
+where java >nul 2>nul
+if errorlevel 1 (
+    echo Java was not found on PATH. Please install Java 17 or newer and try again.
     exit /b 1
 )
 
-echo  Compilation reussie !
-echo.
-echo  Lancement de l'interface graphique...
-echo  =========================================
+for /f "tokens=2 delims==" %%I in ('java -XshowSettings:properties -version 2^>^&1 ^| findstr /c:"java.home ="') do (
+    set "JAVA_HOME=%%I"
+)
+set "JAVA_HOME=%JAVA_HOME:~1%"
 
-java --module-path "%JAVAFX%" ^
-     --add-modules javafx.controls,javafx.fxml ^
-     -cp %OUT% %MAIN%
+where mvn >nul 2>nul
+if not errorlevel 1 (
+    mvn clean javafx:run
+    exit /b %errorlevel%
+)
 
-pause
+if not exist "%MAVEN_BIN%" (
+    if not exist "%SCRIPT_DIR%.tools" mkdir "%SCRIPT_DIR%.tools"
+    echo Maven was not found. Downloading Apache Maven %MAVEN_VERSION%...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+        "$ProgressPreference='SilentlyContinue';" ^
+        "Invoke-WebRequest -Uri '%MAVEN_URL%' -OutFile '%MAVEN_ZIP%';" ^
+        "Expand-Archive -Path '%MAVEN_ZIP%' -DestinationPath '%SCRIPT_DIR%.tools' -Force"
+    if errorlevel 1 (
+        echo Failed to download Maven.
+        exit /b 1
+    )
+)
+
+"%MAVEN_BIN%" clean javafx:run
+exit /b %errorlevel%
